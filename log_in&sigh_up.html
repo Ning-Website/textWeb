@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册与登录页面</title>
+    <style>
+        #welcome, #error-message, #password-strength {
+            display: none;
+        }
+        .weak { color: red; }
+        .medium { color: orange; }
+        .strong { color: green; }
+    </style>
+    <script>
+        let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || {};
+
+        function checkPasswordStrength(password) {
+            let strength = "weak";
+            if (password.length >= 6 && /[A-Z]/.test(password) && /[0-9]/.test(password)) {
+                strength = "strong";
+            } else if (password.length >= 6) {
+                strength = "medium";
+            }
+            return strength;
+        }
+
+        function handlePasswordInput() {
+            const password = document.getElementById('password').value;
+            const strength = checkPasswordStrength(password);
+            const strengthMessage = document.getElementById('password-strength');
+
+            strengthMessage.style.display = 'block';
+            strengthMessage.className = strength;
+            strengthMessage.innerText = `密码强度：${strength === "weak" ? "弱" : strength === "medium" ? "中" : "强"}`;
+        }
+
+        function validateUsername(username) {
+            return /[a-zA-Z]/.test(username) && !/^[\W_]+$/.test(username);
+        }
+
+        function handleForm(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const isRegistering = document.getElementById('form-type').value === 'register';
+
+            if (isRegistering) {
+                // 用户名验证
+                if (!validateUsername(username)) {
+                    alert('用户名必须包含字母，并且不能只由符号组成！');
+                    return;
+                }
+                // 密码安全检查
+                const passwordStrength = checkPasswordStrength(password);
+                if (passwordStrength === "weak") {
+                    alert('密码强度太弱，请选择一个更强的密码！');
+                    return;
+                }
+
+                // 注册用户
+                if (registeredUsers[username]) {
+                    alert('用户名已存在，请选择其他用户名。');
+                } else {
+                    registeredUsers[username] = password;
+                    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+                    alert('注册成功！');
+                    document.getElementById('form').reset();
+                    document.getElementById('password-strength').style.display = 'none';
+                }
+            } else {
+                // 登录用户
+                if (registeredUsers[username] && registeredUsers[username] === password) {
+                    document.getElementById('welcome-message').innerText = `欢迎，${username}！`;
+                    document.getElementById('welcome').style.display = 'block';
+                    document.getElementById('error-message').style.display = 'none';
+                } else {
+                    document.getElementById('error-message').innerText = '没有此账号或密码错误！';
+                    document.getElementById('error-message').style.display = 'block';
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>用户注册与登录</h1>
+    <form id="form" onsubmit="handleForm(event);">
+        <label for="username">用户名：</label>
+        <input type="text" id="username" name="username" required><br><br>
+
+        <label for="password">密码：</label>
+        <input type="password" id="password" name="password" oninput="handlePasswordInput();" required><br><br>
+        <div id="password-strength" class=""></div>
+
+        <select id="form-type">
+            <option value="register">注册</option>
+            <option value="login">登录</option>
+        </select><br><br>
+
+        <button type="submit">提交</button>
+    </form>
+
+    <div id="error-message" style="color: red;"></div>
+    <div id="welcome">
+        <h2 id="welcome-message"></h2>
+    </div>
+</body>
+</html>
